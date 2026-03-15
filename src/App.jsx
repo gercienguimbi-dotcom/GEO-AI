@@ -364,12 +364,20 @@ export default function GeoAI() {
     setThinkSteps([]);
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "system", content: SYSTEM_PROMPT }, ...apiHistory.current] })
-      });
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
+  },
+  body: JSON.stringify({
+    model: "llama-3.3-70b-versatile",
+    messages: [{ role: "system", content: SYSTEM_PROMPT }, ...apiHistory.current],
+    max_tokens: 1000
+  })
+});
+const data = await res.json();
+const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
       apiHistory.current.push({ role: "assistant", content: reply });
       setMessages(prev => [...prev, { role: "geo", content: reply, time: getTime() }]);
 
