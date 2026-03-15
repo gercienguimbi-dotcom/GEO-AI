@@ -198,15 +198,12 @@ function AuthScreen({ t }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, letterSpacing: "0.2em", marginBottom: 6 }}>EMAIL</div>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="ton@email.com"
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="ton@email.com"
               style={{ width: "100%", background: t.inputBg, border: `1px solid ${t.border}`, borderLeft: `3px solid ${t.accent}`, padding: "10px 12px", color: t.text, fontFamily: "'DM Mono',monospace", fontSize: 13, outline: "none", borderRadius: 0 }} />
           </div>
           <div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, letterSpacing: "0.2em", marginBottom: 6 }}>MOT DE PASSE</div>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handle()}
-              placeholder="••••••••"
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handle()} placeholder="••••••••"
               style={{ width: "100%", background: t.inputBg, border: `1px solid ${t.border}`, borderLeft: `3px solid ${t.accent}`, padding: "10px 12px", color: t.text, fontFamily: "'DM Mono',monospace", fontSize: 13, outline: "none", borderRadius: 0 }} />
           </div>
           {error && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "#c0392b", padding: "8px 12px", background: "rgba(192,57,43,0.08)", border: "1px solid rgba(192,57,43,0.2)" }}>{error}</div>}
@@ -224,13 +221,26 @@ function AuthScreen({ t }) {
   );
 }
 
-function Sidebar({ t, conversations, activeId, onSelect, onNew, onLogout, user }) {
+function Sidebar({ t, conversations, activeId, onSelect, onNew, onLogout, user, onClose, isMobile }) {
   return (
-    <div style={{ width: 240, background: t.surface, borderRight: `1px solid ${t.border}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <div style={{
+      width: 240, background: t.surface, borderRight: `1px solid ${t.border}`,
+      display: "flex", flexDirection: "column", flexShrink: 0,
+      position: isMobile ? "fixed" : "relative",
+      top: isMobile ? 0 : "auto", left: isMobile ? 0 : "auto",
+      height: isMobile ? "100vh" : "auto",
+      zIndex: isMobile ? 100 : "auto",
+      boxShadow: isMobile ? `4px 0 20px rgba(0,0,0,0.5)` : "none"
+    }}>
       <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-          <AdinkraSVG color={t.accent} size={20} />
-          <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: t.text }}>GEO <span style={{ color: t.accent }}>AI</span></span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <AdinkraSVG color={t.accent} size={20} />
+            <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: t.text }}>GEO <span style={{ color: t.accent }}>AI</span></span>
+          </div>
+          {isMobile && (
+            <button onClick={onClose} style={{ background: "none", border: "none", color: t.muted, cursor: "pointer", fontSize: 18, padding: 4 }}>✕</button>
+          )}
         </div>
         <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, letterSpacing: "0.1em", marginBottom: 10 }}>{user?.email}</div>
         <button onClick={onNew}
@@ -242,12 +252,10 @@ function Sidebar({ t, conversations, activeId, onSelect, onNew, onLogout, user }
         {conversations.length === 0 ? (
           <div style={{ padding: "16px", fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.muted, textAlign: "center" }}>Aucune conversation</div>
         ) : conversations.map(c => (
-          <div key={c.id} onClick={() => onSelect(c)}
+          <div key={c.id} onClick={() => { onSelect(c); if (isMobile) onClose(); }}
             style={{ padding: "10px 16px", cursor: "pointer", background: activeId === c.id ? t.surface2 : "none", borderLeft: activeId === c.id ? `3px solid ${t.accent}` : "3px solid transparent", transition: "all 0.2s" }}>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: activeId === c.id ? t.text : t.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, marginTop: 3 }}>
-              {new Date(c.updated_at).toLocaleDateString("fr-FR")}
-            </div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, marginTop: 3 }}>{new Date(c.updated_at).toLocaleDateString("fr-FR")}</div>
           </div>
         ))}
       </div>
@@ -273,18 +281,28 @@ export default function GeoAI() {
   const [thinkMode, setThinkMode] = useState(true);
   const [thinkSteps, setThinkSteps] = useState([]);
   const [thinking, setThinking] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const chatRef = useRef(null);
   const apiHistory = useRef([]);
   const t = THEMES[theme];
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(true);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-    supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
+    supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
   }, []);
 
   useEffect(() => { if (user) loadConversations(); }, [user]);
@@ -345,19 +363,13 @@ export default function GeoAI() {
     if (thinkMode) await runThinking();
     setThinkSteps([]);
 
-    // Détection de langue
     const lang = detectLang(text);
-    const dynamicPrompt = SYSTEM_PROMPT + `\n\nThe user's message language is: ${lang}. You MUST respond in ${lang} only. Do not use any other language.`;
+    const dynamicPrompt = SYSTEM_PROMPT + `\n\nThe user's message language is: ${lang}. You MUST respond in ${lang} only.`;
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [
-            { role: "system", content: dynamicPrompt },
-            ...apiHistory.current
-          ]
-        })
+        body: JSON.stringify({ messages: [{ role: "system", content: dynamicPrompt }, ...apiHistory.current] })
       });
       const data = await res.json();
       const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
@@ -396,22 +408,43 @@ export default function GeoAI() {
         .sbtn:disabled { opacity: 0.3; cursor: not-allowed; }
       `}</style>
 
-      <Sidebar t={t} conversations={conversations} activeId={activeConv?.id} onSelect={selectConv} onNew={newConversation} onLogout={logout} user={user} />
+      {/* Overlay mobile */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 99 }} />
+      )}
 
+      {/* Sidebar */}
+      {sidebarOpen && (
+        <Sidebar t={t} conversations={conversations} activeId={activeConv?.id}
+          onSelect={selectConv} onNew={newConversation} onLogout={logout}
+          user={user} onClose={() => setSidebarOpen(false)} isMobile={isMobile} />
+      )}
+
+      {/* Main */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <nav style={{ padding: "0.9rem 2rem", borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: t.bg }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.muted, letterSpacing: "0.15em" }}>
-            {activeConv ? activeConv.title : "SÉLECTIONNE OU CRÉE UNE CONVERSATION"}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.accent3 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: t.accent3, animation: "blink 2s infinite" }} />ACTIF
+        <nav style={{ padding: "0.9rem 1rem", borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: t.bg }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Burger button */}
+            <button onClick={() => setSidebarOpen(v => !v)}
+              style={{ background: "none", border: `1px solid ${t.border}`, color: t.muted, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 4, flexShrink: 0 }}>
+              ☰
+            </button>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.muted, letterSpacing: "0.15em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: isMobile ? 140 : 300 }}>
+              {activeConv ? activeConv.title : "NOUVELLE CONVERSATION"}
             </div>
-            <div onClick={() => setThinkMode(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {!isMobile && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.accent3 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: t.accent3, animation: "blink 2s infinite" }} />ACTIF
+              </div>
+            )}
+            <div onClick={() => setThinkMode(v => !v)} style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", userSelect: "none" }}>
               <div style={{ width: 28, height: 15, borderRadius: 8, background: thinkMode ? t.accent : t.border, position: "relative", transition: "background 0.25s", border: `1px solid ${t.border}` }}>
                 <div style={{ position: "absolute", top: 2, left: thinkMode ? 13 : 2, width: 9, height: 9, background: "#fff", borderRadius: "50%", transition: "left 0.25s" }} />
               </div>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: thinkMode ? t.accent : t.muted, letterSpacing: "0.1em" }}>THINKING</span>
+              {!isMobile && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: thinkMode ? t.accent : t.muted, letterSpacing: "0.1em" }}>THINKING</span>}
             </div>
             <button onClick={() => setTheme(v => v === "dark" ? "light" : "dark")}
               style={{ background: "none", border: `1px solid ${t.border}`, color: t.muted, width: 30, height: 30, borderRadius: "50%", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -423,10 +456,10 @@ export default function GeoAI() {
         <KenteDivider t={t} />
 
         {(thinking || thinkSteps.length > 0) && (
-          <div style={{ padding: "0 2rem" }}><div style={{ paddingTop: 10 }}><ThinkPanel steps={thinkSteps} active={thinking} t={t} /></div></div>
+          <div style={{ padding: "0 1rem" }}><div style={{ paddingTop: 10 }}><ThinkPanel steps={thinkSteps} active={thinking} t={t} /></div></div>
         )}
 
-        <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "1.5rem 2rem", minHeight: 0 }}>
+        <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "1rem", minHeight: 0 }}>
           {messages.length === 0 ? (
             <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, opacity: 0.35 }}>
               <AdinkraSVG color={t.accent} size={48} />
@@ -444,33 +477,37 @@ export default function GeoAI() {
 
         <KenteDivider t={t} />
 
-        <div style={{ padding: "1rem 2rem 0.8rem", flexShrink: 0, background: t.bg }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-            {QUICK.map((q, i) => (
-              <button key={i} className="qbtn" onClick={() => setInput(q)}
-                style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: 0, padding: "4px 12px", fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.muted, cursor: "pointer", transition: "all 0.2s", letterSpacing: "0.05em" }}>
-                {q}
-              </button>
-            ))}
-          </div>
+        <div style={{ padding: "0.8rem 1rem", flexShrink: 0, background: t.bg }}>
+          {!isMobile && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+              {QUICK.map((q, i) => (
+                <button key={i} className="qbtn" onClick={() => setInput(q)}
+                  style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: 0, padding: "4px 12px", fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.muted, cursor: "pointer", transition: "all 0.2s", letterSpacing: "0.05em" }}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
             <div style={{ flex: 1, background: t.inputBg, border: `1px solid ${t.border}`, borderLeft: `3px solid ${t.accent}`, padding: "10px 14px" }}>
               <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey}
                 placeholder="Parlez à GEO AI..." maxLength={2000} rows={1}
                 style={{ width: "100%", background: "transparent", border: "none", outline: "none", color: t.text, fontSize: 13, resize: "none", lineHeight: 1.6, maxHeight: 100, overflowY: "auto" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                 <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted }}>{input.length}/2000</span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted }}>SHIFT+ENTRÉE = nouvelle ligne</span>
+                {!isMobile && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted }}>SHIFT+ENTRÉE = nouvelle ligne</span>}
               </div>
             </div>
             <button className="sbtn" onClick={send} disabled={loading || !input.trim()}
-              style={{ padding: "0 20px", height: 52, background: "none", border: `1px solid ${t.accent}`, color: t.accent, fontFamily: "'DM Mono',monospace", fontSize: 11, letterSpacing: "0.15em", cursor: "pointer", transition: "all 0.2s", borderRadius: 0 }}>
-              ENVOYER →
+              style={{ padding: "0 16px", height: 52, background: "none", border: `1px solid ${t.accent}`, color: t.accent, fontFamily: "'DM Mono',monospace", fontSize: isMobile ? 18 : 11, letterSpacing: "0.15em", cursor: "pointer", transition: "all 0.2s", borderRadius: 0 }}>
+              {isMobile ? "↑" : "ENVOYER →"}
             </button>
           </div>
-          <div style={{ textAlign: "center", marginTop: 8, fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, letterSpacing: "0.15em" }}>
-            POWERED BY <span style={{ color: t.accent }}>GEO AI</span> — OCTALABS © 2025 — GARCIA G. ELLA
-          </div>
+          {!isMobile && (
+            <div style={{ textAlign: "center", marginTop: 8, fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, letterSpacing: "0.15em" }}>
+              POWERED BY <span style={{ color: t.accent }}>GEO AI</span> — OCTALABS © 2025 — GARCIA G. ELLA
+            </div>
+          )}
         </div>
       </div>
     </div>
