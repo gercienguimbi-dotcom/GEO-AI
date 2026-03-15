@@ -11,7 +11,7 @@ app.post('/api/chat', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer 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'
+        'Authorization': 'Bearer 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'
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
@@ -19,7 +19,9 @@ app.post('/api/chat', async (req, res) => {
         max_tokens: 1000
       })
     })
-    const data = await response.json()
+    const text = await response.text()
+console.log('GROQ RESPONSE:', text)
+const data = JSON.parse(text)
     res.json(data)
   } catch(e) {
     res.status(500).json({ error: e.message })
