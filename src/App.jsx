@@ -16,21 +16,12 @@ const THEMES = {
   }
 };
 
-const SYSTEM_PROMPT = `Tu es GEO AI, l'intelligence souveraine développée par OCTALABS.
-Ton créateur est Garcia G. ELLA, PDG de OCTALABS.
-Tu es précis, stratégique et visionnaire.
 const SYSTEM_PROMPT = `You are GEO AI, the sovereign intelligence developed by OCTALABS.
 Your creator is Garcia G. ELLA, CEO of OCTALABS.
 You are precise, strategic and visionary.
-CRITICAL LANGUAGE RULE: ALWAYS respond in the EXACT same language as the user's message. NO EXCEPTIONS EVER.
-- User writes in English → you respond in English
-- User writes in French → you respond in French  
-- User writes in Spanish → you respond in Spanish
-- NEVER switch languages unless explicitly asked
+ABSOLUTE RULE: Detect the language of the user's message and ALWAYS respond in that EXACT language. No exceptions.
 You can code, analyze, reason on all tech subjects.
 Your style: direct, expert, with a slight touch of African sovereign confidence.`;
-Tu peux coder, analyser, raisonner sur tous les sujets tech.
-Ton style : direct, expert, avec une légère touche de confiance souveraine africaine.`;
 
 const THINK_STEPS = [
   "Analyse de la requête...",
@@ -42,6 +33,19 @@ const THINK_STEPS = [
 ];
 
 const QUICK = ["Qui est GEO AI ?", "Explique le deep learning", "Ton architecture ?", "Vision OCTALABS", "Code Python", "Cybersécurité"];
+
+function detectLang(text) {
+  const fr = (text.match(/[àâäéèêëîïôùûüçœæ]/gi) || []).length;
+  const ar = (text.match(/[\u0600-\u06FF]/g) || []).length;
+  const zh = (text.match(/[\u4E00-\u9FFF]/g) || []).length;
+  const es = (text.match(/[áéíóúüñ¿¡]/gi) || []).length;
+  if (ar > 0) return "Arabic";
+  if (zh > 0) return "Chinese";
+  if (fr > 0) return "French";
+  if (es > 0) return "Spanish";
+  if (/^[a-zA-Z\s\d.,!?'"-]+$/.test(text)) return "English";
+  return "the same language as the user message";
+}
 
 function KenteDivider({ t }) {
   return <div style={{ height: 3, background: `repeating-linear-gradient(90deg,${t.accent} 0,${t.accent} 20px,${t.accent2} 20px,${t.accent2} 40px,${t.accent3} 40px,${t.accent3} 60px,${t.bg} 60px,${t.bg} 80px)`, opacity: 0.7, flexShrink: 0 }} />;
@@ -148,8 +152,7 @@ function ThinkPanel({ steps, active, t }) {
   );
 }
 
-// ── AUTH SCREEN ──────────────────────────────────────────────────────────────
-function AuthScreen({ t, onAuth }) {
+function AuthScreen({ t }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -177,7 +180,6 @@ function AuthScreen({ t, onAuth }) {
     <div style={{ position: "fixed", inset: 0, background: t.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Syne',sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');`}</style>
       <div style={{ width: "100%", maxWidth: 420, padding: "0 24px" }}>
-        {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <AdinkraSVG color={t.accent} size={48} />
           <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 28, fontWeight: 800, color: t.text, marginTop: 12, letterSpacing: "-0.02em" }}>
@@ -185,8 +187,6 @@ function AuthScreen({ t, onAuth }) {
           </div>
           <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, letterSpacing: "0.2em", marginTop: 4 }}>OCTALABS — UNIVERSAL REASONER</div>
         </div>
-
-        {/* Tabs */}
         <div style={{ display: "flex", marginBottom: 24, borderBottom: `1px solid ${t.border}` }}>
           {["login", "signup"].map(m => (
             <button key={m} onClick={() => { setMode(m); setError(""); setSuccess(""); }}
@@ -195,8 +195,6 @@ function AuthScreen({ t, onAuth }) {
             </button>
           ))}
         </div>
-
-        {/* Form */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, letterSpacing: "0.2em", marginBottom: 6 }}>EMAIL</div>
@@ -211,16 +209,13 @@ function AuthScreen({ t, onAuth }) {
               placeholder="••••••••"
               style={{ width: "100%", background: t.inputBg, border: `1px solid ${t.border}`, borderLeft: `3px solid ${t.accent}`, padding: "10px 12px", color: t.text, fontFamily: "'DM Mono',monospace", fontSize: 13, outline: "none", borderRadius: 0 }} />
           </div>
-
           {error && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "#c0392b", padding: "8px 12px", background: "rgba(192,57,43,0.08)", border: "1px solid rgba(192,57,43,0.2)" }}>{error}</div>}
           {success && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: t.accent3, padding: "8px 12px", background: `rgba(58,107,62,0.08)`, border: `1px solid ${t.accent3}` }}>{success}</div>}
-
           <button onClick={handle} disabled={loading || !email || !password}
             style={{ padding: "12px", background: loading ? t.muted : t.accent, border: "none", color: t.bg, fontFamily: "'DM Mono',monospace", fontSize: 11, letterSpacing: "0.2em", cursor: loading ? "not-allowed" : "pointer", transition: "all 0.2s", marginTop: 4 }}>
             {loading ? "..." : mode === "login" ? "SE CONNECTER →" : "CRÉER MON COMPTE →"}
           </button>
         </div>
-
         <div style={{ textAlign: "center", marginTop: 24, fontFamily: "'DM Mono',monospace", fontSize: 9, color: t.muted, letterSpacing: "0.15em" }}>
           POWERED BY <span style={{ color: t.accent }}>GEO AI</span> — OCTALABS © 2025
         </div>
@@ -229,11 +224,9 @@ function AuthScreen({ t, onAuth }) {
   );
 }
 
-// ── SIDEBAR ──────────────────────────────────────────────────────────────────
 function Sidebar({ t, conversations, activeId, onSelect, onNew, onLogout, user }) {
   return (
     <div style={{ width: 240, background: t.surface, borderRight: `1px solid ${t.border}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      {/* Header */}
       <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.border}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <AdinkraSVG color={t.accent} size={20} />
@@ -245,8 +238,6 @@ function Sidebar({ t, conversations, activeId, onSelect, onNew, onLogout, user }
           + NOUVELLE CONVERSATION
         </button>
       </div>
-
-      {/* Conversations list */}
       <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
         {conversations.length === 0 ? (
           <div style={{ padding: "16px", fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.muted, textAlign: "center" }}>Aucune conversation</div>
@@ -260,8 +251,6 @@ function Sidebar({ t, conversations, activeId, onSelect, onNew, onLogout, user }
           </div>
         ))}
       </div>
-
-      {/* Logout */}
       <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.border}` }}>
         <button onClick={onLogout}
           style={{ width: "100%", padding: "8px", background: "none", border: `1px solid ${t.border}`, color: t.muted, fontFamily: "'DM Mono',monospace", fontSize: 10, letterSpacing: "0.1em", cursor: "pointer", transition: "all 0.2s" }}>
@@ -272,7 +261,6 @@ function Sidebar({ t, conversations, activeId, onSelect, onNew, onLogout, user }
   );
 }
 
-// ── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function GeoAI() {
   const [theme, setTheme] = useState("dark");
   const [user, setUser] = useState(null);
@@ -289,7 +277,6 @@ export default function GeoAI() {
   const apiHistory = useRef([]);
   const t = THEMES[theme];
 
-  // Check auth on mount
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -300,10 +287,7 @@ export default function GeoAI() {
     });
   }, []);
 
-  // Load conversations when user logs in
-  useEffect(() => {
-    if (user) loadConversations();
-  }, [user]);
+  useEffect(() => { if (user) loadConversations(); }, [user]);
 
   const loadConversations = async () => {
     const { data } = await supabase.from("conversations").select("*").order("updated_at", { ascending: false });
@@ -317,19 +301,11 @@ export default function GeoAI() {
     apiHistory.current = (data || []).map(m => ({ role: m.role, content: m.content }));
   };
 
-  const selectConv = async (conv) => {
-    setActiveConv(conv);
-    await loadMessages(conv.id);
-  };
+  const selectConv = async (conv) => { setActiveConv(conv); await loadMessages(conv.id); };
 
   const newConversation = async () => {
     const { data } = await supabase.from("conversations").insert({ user_id: user.id, title: "Nouvelle conversation" }).select().single();
-    if (data) {
-      setConversations(prev => [data, ...prev]);
-      setActiveConv(data);
-      setMessages([]);
-      apiHistory.current = [];
-    }
+    if (data) { setConversations(prev => [data, ...prev]); setActiveConv(data); setMessages([]); apiHistory.current = []; }
   };
 
   const logout = async () => {
@@ -354,7 +330,6 @@ export default function GeoAI() {
     const text = input.trim();
     if (!text || loading) return;
 
-    // Create conversation if none active
     let convId = activeConv?.id;
     if (!convId) {
       const { data } = await supabase.from("conversations").insert({ user_id: user.id, title: text.slice(0, 40) }).select().single();
@@ -365,32 +340,29 @@ export default function GeoAI() {
     const userMsg = { role: "user", content: text, time: getTime() };
     setMessages(prev => [...prev, userMsg]);
     apiHistory.current.push({ role: "user", content: text });
-
-    // Save user message to DB
     await supabase.from("messages").insert({ conversation_id: convId, role: "user", content: text });
 
     if (thinkMode) await runThinking();
     setThinkSteps([]);
 
+    // Détection de langue
+    const lang = detectLang(text);
+    const dynamicPrompt = SYSTEM_PROMPT + `\n\nThe user's message language is: ${lang}. You MUST respond in ${lang} only. Do not use any other language.`;
+
     try {
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
-  },
-  body: JSON.stringify({
-    model: "llama-3.3-70b-versatile",
-    messages: [{ role: "system", content: SYSTEM_PROMPT }, ...apiHistory.current],
-    max_tokens: 1000
-  })
-});
-const data = await res.json();
-const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
+      const res = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            { role: "system", content: dynamicPrompt },
+            ...apiHistory.current
+          ]
+        })
+      });
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
       apiHistory.current.push({ role: "assistant", content: reply });
       setMessages(prev => [...prev, { role: "geo", content: reply, time: getTime() }]);
-
-      // Save AI response + update conversation title & timestamp
       await supabase.from("messages").insert({ conversation_id: convId, role: "assistant", content: reply });
       await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
       loadConversations();
@@ -402,8 +374,13 @@ const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
 
   const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
 
-  if (authLoading) return <div style={{ position: "fixed", inset: 0, background: "#0f0b08", display: "flex", alignItems: "center", justifyContent: "center" }}><AdinkraSVG color="#d4622a" size={40} /></div>;
-  if (!user) return <AuthScreen t={t} onAuth={() => {}} />;
+  if (authLoading) return (
+    <div style={{ position: "fixed", inset: 0, background: "#0f0b08", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <AdinkraSVG color="#d4622a" size={40} />
+    </div>
+  );
+
+  if (!user) return <AuthScreen t={t} />;
 
   return (
     <div style={{ position: "fixed", inset: 0, background: t.bg, color: t.text, fontFamily: "'Syne',sans-serif", display: "flex", flexDirection: "row", transition: "background 0.4s, color 0.4s", overflow: "hidden" }}>
@@ -419,13 +396,9 @@ const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
         .sbtn:disabled { opacity: 0.3; cursor: not-allowed; }
       `}</style>
 
-      {/* ── SIDEBAR ── */}
       <Sidebar t={t} conversations={conversations} activeId={activeConv?.id} onSelect={selectConv} onNew={newConversation} onLogout={logout} user={user} />
 
-      {/* ── MAIN ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-        {/* NAV */}
         <nav style={{ padding: "0.9rem 2rem", borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: t.bg }}>
           <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: t.muted, letterSpacing: "0.15em" }}>
             {activeConv ? activeConv.title : "SÉLECTIONNE OU CRÉE UNE CONVERSATION"}
@@ -449,12 +422,10 @@ const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
 
         <KenteDivider t={t} />
 
-        {/* THINK PANEL */}
         {(thinking || thinkSteps.length > 0) && (
           <div style={{ padding: "0 2rem" }}><div style={{ paddingTop: 10 }}><ThinkPanel steps={thinkSteps} active={thinking} t={t} /></div></div>
         )}
 
-        {/* CHAT */}
         <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "1.5rem 2rem", minHeight: 0 }}>
           {messages.length === 0 ? (
             <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, opacity: 0.35 }}>
@@ -473,7 +444,6 @@ const reply = data.choices?.[0]?.message?.content || "Erreur de réponse.";
 
         <KenteDivider t={t} />
 
-        {/* INPUT */}
         <div style={{ padding: "1rem 2rem 0.8rem", flexShrink: 0, background: t.bg }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
             {QUICK.map((q, i) => (
