@@ -488,3 +488,4 @@ export default function GeoAI() {
       </div>
     </div>
   );
+}
