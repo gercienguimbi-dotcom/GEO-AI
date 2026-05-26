@@ -1,16 +1,48 @@
-# React + Vite
+# Geo AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Assistant IA géographique propulsé par Groq (Llama 3.3 70B).
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend** : React + Vite
+- **Backend** : Vercel Serverless Function (`api/chat.js`)
+- **LLM** : Groq API (llama-3.3-70b-versatile)
 
-## React Compiler
+## Développement local
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Installe les dépendances**
+   ```bash
+   npm install
+   ```
 
-## Expanding the ESLint configuration
+2. **Configure la clé API**
+   ```bash
+   cp .env.example .env
+   # Édite .env et remplis GROQ_API_KEY
+   ```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+3. **Lance l'app**
+   ```bash
+   # Terminal 1 — frontend
+   npm run dev
+
+   # Terminal 2 — serveur proxy local
+   node server.dev.js
+   ```
+
+   Ouvre http://localhost:5173
+
+## Déploiement sur Vercel
+
+1. Push sur GitHub
+2. Importe le repo sur [vercel.com](https://vercel.com)
+3. Dans les settings du projet → **Environment Variables** :
+   - `GROQ_API_KEY` = ta clé Groq
+4. Clique **Deploy** — c'est tout !
+
+> Le fichier `api/chat.js` devient automatiquement une fonction serverless sur Vercel.
+> Le `.env` local n'est **jamais** uploadé (voir `.gitignore`).
+
+## Obtenir une clé Groq
+
+Gratuit sur https://console.groq.com/keys
